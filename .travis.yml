@@ -1,0 +1,29 @@
+language: cpp
+sudo: required
+os: linux
+dist: bionic
+compiler: gcc
+git:
+  depth: 1
+addons:
+  apt:
+    update: true
+    sources:
+    - sourceline: 'ppa:ubuntu-toolchain-r/test'
+    packages:
+    - g++-9
+install: ./ocgcore/travis/install-lua.sh
+script:
+- mkdir -p build && cd build
+- cmake .. -DCMAKE_BUILD_TYPE=Release
+- cmake --build . --config Release --parallel 2 --target ocgcore --target script_syntax_checker
+before_deploy:
+- mkdir -p ignis-test
+- cp README.md build/script_syntax_check ocgcore/libocgcore.so ignis-test
+deploy:
+- provider: pages
+  skip_cleanup: true
+  local_dir: ocgcore
+  github_token: $DEPLOY_TOKEN
+  repo: $DEPLOY_REPO
+  target_branch: $DEPLOY_BRANCH

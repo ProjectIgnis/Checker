@@ -1,0 +1,4 @@
+.vscode/
+.idea/
+[Bb]uild*/
+.DS_Store
