@@ -16,7 +16,7 @@ install: ./ocgcore/travis/install-lua.sh
 script:
 - mkdir -p build && cd build
 - cmake .. -DCMAKE_BUILD_TYPE=Release
-- cmake --build . --config Release --parallel 2 --target ocgcore --target script_syntax_checker
+- cmake --build . --config Release --parallel 2 --target script_syntax_check
 before_deploy:
 - mkdir -p ignis-test
 - cp README.md build/script_syntax_check ocgcore/libocgcore.so ignis-test
