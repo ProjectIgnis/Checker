@@ -18,9 +18,10 @@ script:
 - mkdir -p build && cd build
 - cmake .. -DCMAKE_BUILD_TYPE=Release
 - cmake --build . --config Release --parallel 2 --target script_syntax_check
+- cd ..
 before_deploy:
 - mkdir -p ignis-test
-- cp README.md build/script_syntax_check ocgcore/libocgcore.so ignis-test
+- cp README.md build/script_syntax_check build/ocgcore/libocgcore.so ignis-test
 deploy:
 - provider: pages
   skip_cleanup: true
