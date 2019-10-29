@@ -12,6 +12,7 @@ addons:
     - sourceline: 'ppa:ubuntu-toolchain-r/test'
     packages:
     - g++-9
+env: CXX=g++-9
 install: ./ocgcore/travis/install-lua.sh
 script:
 - mkdir -p build && cd build
