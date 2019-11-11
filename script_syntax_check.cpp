@@ -27,6 +27,9 @@
 #include "common.h"
 
 
+int exitCode = EXIT_SUCCESS;
+std::string lastScript;
+
 int GetCard([[maybe_unused]] void *payload, int code, OCG_CardData *card) {
     memset(card, 0, sizeof(OCG_CardData));
     card->code = code;
@@ -37,12 +40,12 @@ int LoadScript([[maybe_unused]] void *payload, OCG_Duel duel, const char *path) 
     std::ifstream f(path);
     std::stringstream buf;
     buf << f.rdbuf();
+    lastScript = path;
     return buf.str().length() && OCG_LoadScript(duel, buf.str().c_str(), buf.str().length(), path);
 }
 
-int exitCode = EXIT_SUCCESS;
 void Log([[maybe_unused]] void *payload, const char *string, int type) {
-    std::cerr << type << ": " << string << std::endl;
+    std::cerr << type << ": " << string << " from " << lastScript << std::endl;
     exitCode = EXIT_FAILURE;
 }
 
