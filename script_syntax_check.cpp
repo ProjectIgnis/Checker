@@ -129,7 +129,7 @@ int main(int argc, char* argv[]) {
             std::string name(entry->d_name);
             auto length = name.length();
             if (length > 0 && name != "constant.lua" && name != "utility.lua" &&
-                name[0] == 'c' && name.rfind(".lua") == length - 4) {
+                name[0] == 'c' && name.rfind(".lua") == length - 4 && length != 8) {
                     OCG_NewCardInfo card;
                     card.team = card.duelist = card.con = 0;
                     card.seq = 1;
