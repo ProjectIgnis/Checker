@@ -18,8 +18,11 @@
 
 #include <cstring>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
+#include <vector>
 
 #include <dirent.h>
 
@@ -29,6 +32,7 @@
 
 int exitCode = EXIT_SUCCESS;
 std::string lastScript;
+std::vector<std::string> scriptDirectories;
 
 int GetCard([[maybe_unused]] void *payload, int code, OCG_CardData *card) {
     memset(card, 0, sizeof(OCG_CardData));
@@ -37,7 +41,13 @@ int GetCard([[maybe_unused]] void *payload, int code, OCG_CardData *card) {
 }
 
 int LoadScript([[maybe_unused]] void *payload, OCG_Duel duel, const char *path) {
-    std::ifstream f(path);
+    std::ifstream f;
+    for (const auto& directory : scriptDirectories) {
+        f.open(directory + '/' + path);
+        if (f) {
+            break;
+        }
+    }
     std::stringstream buf;
     buf << f.rdbuf();
     lastScript = path;
@@ -57,7 +67,47 @@ void LoadIfExists(OCG_Duel duel, const char* script) {
     }
 }
 
-int main() {
+void DirectoryWalk(const std::string& directory, const std::function<void(dirent*)>& callback) {
+    auto listing = opendir(directory.c_str());
+    if (!listing) {
+        throw std::runtime_error("Failed to open " + directory);
+    }
+    for (dirent *entry; (entry = readdir(listing)) != nullptr; ) {
+        callback(entry);
+    }
+}
+
+void DirectoryWalkRecursive(const std::string& directory, const std::function<void(dirent*)>& callback, int levels = 0) {
+    DirectoryWalk(directory, [&](dirent* entry) {
+        switch(entry->d_type) {
+        case DT_REG:
+            callback(entry);
+            break;
+        case DT_DIR:
+            if (levels && strlen(entry->d_name) && entry->d_name[0] != '.') {
+                DirectoryWalkRecursive(directory + '/' + entry->d_name, callback, levels - 1);
+            }
+            break;
+        } 
+    });
+}
+
+void DirectoryWalkSubfolders(const std::string& directory, const std::function<void(dirent*)>& callback, int levels = 0) {
+    DirectoryWalk(directory, [&](dirent* entry) {
+        if (entry->d_type == DT_DIR && strlen(entry->d_name) && entry->d_name[0] != '.') {
+            callback(entry);
+            if (levels) {
+                DirectoryWalkSubfolders(directory + '/' + entry->d_name, callback, levels - 1);
+            }
+        }
+    });
+}
+
+int main(int argc, char* argv[]) {
+    std::string scriptRoot = ".";
+    if (argc > 1) {
+        scriptRoot = argv[1];
+    }
     OCG_DuelOptions config;
     config.cardReader = &GetCard;
     config.scriptReader = &LoadScript;
@@ -67,15 +117,15 @@ int main() {
         std::cerr << "Failed to create duel instance!" << std::endl;
         return EXIT_FAILURE;
     }
-    LoadIfExists(duel, "constant.lua");
-    LoadIfExists(duel, "utility.lua");
-    auto listing = opendir(".");
-    if (!listing) {
-        std::cerr << "Failed to open current directory!" << std::endl;
-        return EXIT_FAILURE;
-    }
-    for (dirent *entry; (entry = readdir(listing)) != nullptr; ) {
-        if (entry->d_type == DT_REG) {
+    try {
+        scriptDirectories.push_back(scriptRoot);
+        DirectoryWalkSubfolders(scriptRoot, [scriptRoot](dirent* entry) {
+            std::cout << "Found script folder " << scriptRoot << '/' << entry->d_name << std::endl;
+            scriptDirectories.push_back(scriptRoot + '/' + entry->d_name);
+        });
+        LoadIfExists(duel, "constant.lua");
+        LoadIfExists(duel, "utility.lua");
+        DirectoryWalkRecursive(scriptRoot, [duel](dirent* entry) {
             std::string name(entry->d_name);
             auto length = name.length();
             if (length > 0 && name != "constant.lua" && name != "utility.lua" &&
@@ -88,7 +138,10 @@ int main() {
                     card.code = std::stoi(name.substr(1, length - 4));
                     OCG_DuelNewCard(duel, card);
             }
-        }
+        }, 1);
+    } catch (const std::runtime_error& e) {
+        std::cerr << e.what() << std::endl;
+        exitCode = EXIT_FAILURE;
     }
     OCG_DestroyDuel(duel);
     return exitCode;
