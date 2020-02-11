@@ -34,10 +34,9 @@ int exitCode = EXIT_SUCCESS;
 std::string lastScript;
 std::vector<std::string> scriptDirectories;
 
-int GetCard([[maybe_unused]] void *payload, int code, OCG_CardData *card) {
+void GetCard([[maybe_unused]] void *payload, int code, OCG_CardData *card) {
     memset(card, 0, sizeof(OCG_CardData));
     card->code = code;
-    return true;
 }
 
 int LoadScript([[maybe_unused]] void *payload, OCG_Duel duel, const char *path) {
