@@ -111,6 +111,7 @@ int main(int argc, char* argv[]) {
     config.cardReader = &GetCard;
     config.scriptReader = &LoadScript;
     config.logHandler = &Log;
+    config.cardReaderDone = nullptr;
     OCG_Duel duel;
     if (OCG_CreateDuel(&duel, config) != OCG_DUEL_CREATION_SUCCESS) {
         std::cerr << "Failed to create duel instance!" << std::endl;
