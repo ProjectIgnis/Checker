@@ -107,11 +107,10 @@ int main(int argc, char* argv[]) {
     if (argc > 1) {
         scriptRoot = argv[1];
     }
-    OCG_DuelOptions config;
+    OCG_DuelOptions config{};
     config.cardReader = &GetCard;
     config.scriptReader = &LoadScript;
     config.logHandler = &Log;
-    config.cardReaderDone = nullptr;
     OCG_Duel duel;
     if (OCG_CreateDuel(&duel, config) != OCG_DUEL_CREATION_SUCCESS) {
         std::cerr << "Failed to create duel instance!" << std::endl;
@@ -130,12 +129,16 @@ int main(int argc, char* argv[]) {
             auto length = name.length();
             if (length > 0 && name != "constant.lua" && name != "utility.lua" &&
                 name[0] == 'c' && name.rfind(".lua") == length - 4 && length != 8) {
-                    OCG_NewCardInfo card;
+                    OCG_NewCardInfo card{};
                     card.team = card.duelist = card.con = 0;
                     card.seq = 1;
                     card.loc = LOCATION_DECK;
                     card.pos = POS_FACEDOWN_ATTACK;
-                    card.code = std::stoi(name.substr(1, length - 4));
+                    try {
+                        card.code = std::stoi(name.substr(1, length - 4));
+                    } catch (const std::invalid_argument& e) {
+                        return;
+                    }
                     OCG_DuelNewCard(duel, card);
             }
         }, 1);
