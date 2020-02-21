@@ -136,6 +136,7 @@ int main(int argc, char* argv[]) {
                     card.pos = POS_FACEDOWN_ATTACK;
                     try {
                         card.code = std::stoi(name.substr(1, length - 4));
+                        if (card.code == 151000000) return;
                     } catch (const std::invalid_argument& e) {
                         return;
                     }
