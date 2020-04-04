@@ -13,8 +13,15 @@ script:
 - cd ..
 before_deploy:
 - mkdir -p ignis-test
-- cp README.md build/script_syntax_check build/ocgcore/libocgcore.so ignis-test
+- cp README.md COPYING ocgcore/LICENSE build/script_syntax_check build/ocgcore/libocgcore.so ignis-test
+- tar czvf ignis-test-bin.tar.gz ignis-test
 deploy:
+- provider: releases
+  skip_cleanup: true
+  api_key: $RELEASE_TOKEN
+  file: ignis-test-bin.tar.gz
+  on:
+    tags: true
 - provider: pages
   skip_cleanup: true
   local_dir: ignis-test
