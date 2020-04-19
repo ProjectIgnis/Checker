@@ -103,10 +103,25 @@ void DirectoryWalkSubfolders(const std::string& directory, const std::function<v
 }
 
 int main(int argc, char* argv[]) {
-    std::string scriptRoot = ".";
-    if (argc > 1) {
-        scriptRoot = argv[1];
+    if (argc == 1) {
+        scriptDirectories.push_back(".");
+    } else {
+        for (int i = 1; i < argc; i++) {
+            const std::string scriptRoot = argv[i];
+            try {
+                std::cout << "Passed script folder " << scriptRoot << std::endl;
+                scriptDirectories.push_back(scriptRoot);
+                DirectoryWalkSubfolders(scriptRoot, [scriptRoot](dirent* entry) {
+                    std::cout << "Found script folder " << scriptRoot << '/' << entry->d_name << std::endl;
+                    scriptDirectories.push_back(scriptRoot + '/' + entry->d_name);
+                });
+            } catch (const std::runtime_error& e) {
+                std::cerr << e.what() << std::endl;
+                return EXIT_FAILURE;
+            }
+        }
     }
+
     OCG_DuelOptions config{};
     config.cardReader = &GetCard;
     config.scriptReader = &LoadScript;
@@ -117,32 +132,29 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
     try {
-        scriptDirectories.push_back(scriptRoot);
-        DirectoryWalkSubfolders(scriptRoot, [scriptRoot](dirent* entry) {
-            std::cout << "Found script folder " << scriptRoot << '/' << entry->d_name << std::endl;
-            scriptDirectories.push_back(scriptRoot + '/' + entry->d_name);
-        });
         LoadIfExists(duel, "constant.lua");
         LoadIfExists(duel, "utility.lua");
-        DirectoryWalkRecursive(scriptRoot, [duel](dirent* entry) {
-            std::string name(entry->d_name);
-            auto length = name.length();
-            if (length > 0 && name != "constant.lua" && name != "utility.lua" &&
-                name[0] == 'c' && name.rfind(".lua") == length - 4 && length != 8) {
-                    OCG_NewCardInfo card{};
-                    card.team = card.duelist = card.con = 0;
-                    card.seq = 1;
-                    card.loc = LOCATION_DECK;
-                    card.pos = POS_FACEDOWN_ATTACK;
-                    try {
-                        card.code = std::stoi(name.substr(1, length - 4));
-                        if (card.code == 151000000) return;
-                    } catch (const std::invalid_argument& e) {
-                        return;
-                    }
-                    OCG_DuelNewCard(duel, card);
-            }
-        }, 1);
+        for (const auto& scriptRoot : scriptDirectories) {
+            DirectoryWalkRecursive(scriptRoot, [duel](dirent* entry) {
+                std::string name(entry->d_name);
+                auto length = name.length();
+                if (length > 0 && name != "constant.lua" && name != "utility.lua" &&
+                    name[0] == 'c' && name.rfind(".lua") == length - 4 && length != 8) {
+                        OCG_NewCardInfo card{};
+                        card.team = card.duelist = card.con = 0;
+                        card.seq = 1;
+                        card.loc = LOCATION_DECK;
+                        card.pos = POS_FACEDOWN_ATTACK;
+                        try {
+                            card.code = std::stoi(name.substr(1, length - 4));
+                            if (card.code == 151000000) return;
+                        } catch (const std::invalid_argument& e) {
+                            return;
+                        }
+                        OCG_DuelNewCard(duel, card);
+                }
+            }, 1);
+        }
     } catch (const std::runtime_error& e) {
         std::cerr << e.what() << std::endl;
         exitCode = EXIT_FAILURE;

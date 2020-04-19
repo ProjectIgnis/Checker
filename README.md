@@ -6,6 +6,13 @@ This also serves as a demo for how to use the [redesigned EDOPro ocgcore C API](
 
 ## Script syntax checker
 
+Usage:
+```
+script_syntax_check [directories...]
+```
+
+All specified directories (default cwd if none provided) are searched for card scripts, including to one subdirectory level. The first script found with the name is always used, so do not specify multiple directories with scripts with the same name.
+
 A basic Lua syntax check is done on scripts on pushes and pull requests. It loads `constant.lua` and `utility.lua` into ocgcore. Then it searches through one subfolder level for files of the form `cX.lua`, where `X` is an integer, loading them into the core as a dummy card with the same passcode. Three-digit passcodes and 151000000 (Action Duel script) are skipped as a workaround.
 
 This catches basic Lua syntax errors like missing `end` statements and runtime errors in `initial_effect` (or a lack of `initial_effect` in a card script).
