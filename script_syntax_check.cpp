@@ -34,7 +34,7 @@ int exitCode = EXIT_SUCCESS;
 std::string lastScript;
 std::vector<std::string> scriptDirectories;
 
-void GetCard([[maybe_unused]] void *payload, int code, OCG_CardData *card) {
+void GetCard([[maybe_unused]] void *payload, uint32_t code, OCG_CardData *card) {
     card->code = code;
 }
 
