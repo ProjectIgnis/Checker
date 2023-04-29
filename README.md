@@ -1,5 +1,7 @@
 # Project Ignis card script check suite
 
+**Superseeded by https://github.com/ProjectIgnis/Script-checker**
+
 This runs on Travis CI for our [card script collection](https://github.com/ProjectIgnis/CardScripts). Currently, it only performs a basic syntax check, but more features may be added in the future. 
 
 This also serves as a demo for how to use the [redesigned EDOPro ocgcore C API](https://github.com/edo9300/ygopro-core). 
